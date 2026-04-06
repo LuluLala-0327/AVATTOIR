@@ -1,0 +1,1668 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dystopian Registry Card Maker</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg: #05070d;
+      --panel: rgba(12, 16, 28, 0.9);
+      --panel-border: rgba(255,255,255,.1);
+      --text: #eef2ff;
+      --muted: #93a4be;
+      --accent: #d4b16a;
+      --shadow: 0 24px 60px rgba(0,0,0,.4);
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(180, 83, 9, .16), transparent 24%),
+        radial-gradient(circle at right, rgba(8, 145, 178, .12), transparent 28%),
+        linear-gradient(180deg, #060912, #03050b 60%, #020308 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at center, black 35%, transparent 85%);
+      opacity: .65;
+    }
+
+    .page {
+      max-width: 1420px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .hero p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 900px;
+    }
+
+    .hero-badge {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: #dbe7ff;
+      font-size: 12px;
+      backdrop-filter: blur(14px);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 410px) minmax(380px, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .controls {
+      padding: 18px;
+      position: sticky;
+      top: 18px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .panel-note {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .section:first-of-type {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .section h3 {
+      margin: 0 0 12px;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #c9d7ef;
+    }
+
+    .field {
+      margin-bottom: 10px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #dbeafe;
+      margin-bottom: 6px;
+    }
+
+    .hint {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(148,163,184,.28);
+      background: rgba(2, 6, 23, .78);
+      color: white;
+      border-radius: 14px;
+      padding: 12px 13px;
+      outline: none;
+      font-size: 14px;
+      transition: .18s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(96,165,250,.95);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+    }
+
+    textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #60a5fa;
+      cursor: pointer;
+    }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .range-value {
+      min-width: 48px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #dbeafe;
+      text-align: right;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: #eef2ff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .chip:hover,
+    .chip.active {
+      border-color: rgba(125,211,252,.86);
+      background: rgba(8, 47, 73, .82);
+      color: #e0f2fe;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 14px;
+      cursor: pointer;
+      color: white;
+      font-size: 13px;
+      font-weight: 800;
+      transition: transform .16s ease, opacity .16s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn.primary { background: linear-gradient(135deg, #4f46e5, #db2777); }
+    .btn.secondary { background: linear-gradient(135deg, #0891b2, #14b8a6); }
+    .btn.ghost {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      color: #e5eefc;
+    }
+
+    .status {
+      margin-top: 12px;
+      min-height: 18px;
+      color: #dbeafe;
+      font-size: 12px;
+    }
+
+    .preview-panel {
+      padding: 18px;
+    }
+
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: end;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .preview-note {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .preview-wrap {
+      padding: 28px;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.06);
+      background:
+        radial-gradient(circle at top, rgba(56,189,248,.08), transparent 26%),
+        radial-gradient(circle at bottom, rgba(249,115,22,.07), transparent 24%),
+        linear-gradient(180deg, rgba(15, 23, 42, .56), rgba(2, 6, 23, .92));
+      overflow: hidden;
+    }
+
+    .preview-stage {
+      position: relative;
+      width: 100%;
+    }
+
+    .card-shell {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 920px;
+      transform-origin: top center;
+      transform: translateX(-50%) scale(var(--preview-scale, 1));
+      will-change: transform;
+    }
+
+    .id-card {
+      position: relative;
+      width: 100%;
+      min-height: 580px;
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: 0 36px 70px rgba(0,0,0,.5);
+      isolation: isolate;
+    }
+
+    .id-card::before,
+    .id-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .id-card::after {
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 22px 22px;
+      opacity: .25;
+      mix-blend-mode: overlay;
+    }
+
+    .id-card.beastman {
+      --card-text: #f9fafb;
+      --card-muted: rgba(226, 232, 240, .72);
+      --line: rgba(212, 177, 106, .34);
+      --panel-soft: rgba(255,255,255,.045);
+      --field-bg: rgba(3, 7, 18, .44);
+      --field-strong: rgba(255,255,255,.08);
+      --chip-bg: linear-gradient(135deg, #dfc089, #8d6a2d);
+      --chip-text: #1d1405;
+      --warn-bg: rgba(3, 7, 18, .76);
+      --warn-text: #efdcb0;
+      background:
+        radial-gradient(circle at top left, rgba(212,177,106,.26), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(8,145,178,.18), transparent 24%),
+        linear-gradient(135deg, #111827 0%, #0b1222 38%, #07101c 100%);
+      color: var(--card-text);
+      border: 1px solid rgba(212,177,106,.34);
+    }
+
+    .id-card.beastman::before {
+      background:
+        linear-gradient(125deg, rgba(212,177,106,.18), transparent 20%, transparent 72%, rgba(255,255,255,.05) 100%),
+        radial-gradient(circle at top right, rgba(255,255,255,.13), transparent 22%);
+    }
+
+    .id-card.human {
+      --card-text: #16181d;
+      --card-muted: rgba(22, 24, 29, .62);
+      --line: rgba(22, 24, 29, .16);
+      --panel-soft: rgba(255,255,255,.4);
+      --field-bg: rgba(255,255,255,.55);
+      --field-strong: rgba(22,24,29,.08);
+      --chip-bg: linear-gradient(135deg, #fb923c, #dc2626);
+      --chip-text: #fff7ed;
+      --warn-bg: #fff7ed;
+      --warn-text: #9a3412;
+      background:
+        radial-gradient(circle at top, rgba(251,146,60,.10), transparent 28%),
+        linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 46%, #d1d5db 100%);
+      color: var(--card-text);
+      border: 1px solid rgba(148,163,184,.44);
+    }
+
+    .id-card.human::before {
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.35), transparent 12%, transparent 88%, rgba(255,255,255,.18)),
+        repeating-linear-gradient(135deg, rgba(239,68,68,.06) 0 16px, rgba(245,158,11,.05) 16px 32px, transparent 32px 64px);
+      opacity: .9;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      min-height: 580px;
+      padding: 18px;
+      gap: 14px;
+    }
+
+    .card-top {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .card-title-group {
+      min-width: 0;
+    }
+
+    .card-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--card-muted);
+      backdrop-filter: blur(10px);
+    }
+
+    .card-title {
+      margin: 10px 0 2px;
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 900;
+      letter-spacing: -.03em;
+    }
+
+    .card-subtitle {
+      margin: 0;
+      font-size: 12px;
+      color: var(--card-muted);
+      line-height: 1.55;
+      max-width: 520px;
+    }
+
+    .mode-chip {
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      background: var(--chip-bg);
+      color: var(--chip-text);
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      white-space: nowrap;
+    }
+
+    .card-main {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      gap: 14px;
+    }
+
+    .portrait-panel,
+    .info-panel {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--field-bg);
+      backdrop-filter: blur(10px);
+    }
+
+    .portrait-panel {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-height: 0;
+    }
+
+    .portrait-label-row {
+      display: none;
+    }
+
+    .portrait-label,
+    .portrait-mini {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--card-muted);
+    }
+
+    .portrait-box {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 380px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(15,23,42,.22), rgba(15,23,42,.5)),
+        url('https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+    }
+
+    .id-card.human .portrait-box {
+      filter: saturate(.72) contrast(1.02);
+    }
+
+    .portrait-box::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+      opacity: .26;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .portrait-box::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,.12), transparent 26%),
+        linear-gradient(180deg, transparent 0%, rgba(0,0,0,.16) 62%, rgba(0,0,0,.34) 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .portrait-area {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      overflow: hidden;
+    }
+
+    .portrait-inner {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 92%;
+      transform: translate(-50%, 0) scale(1.02);
+      transform-origin: center bottom;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      filter: drop-shadow(0 18px 28px rgba(0,0,0,.4));
+    }
+
+    .portrait-img {
+      display: none;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      -webkit-user-drag: none;
+      user-select: none;
+    }
+
+    .portrait-placeholder {
+      width: 100%;
+      aspect-ratio: 4 / 5.7;
+      border-radius: 999px 999px 24px 24px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.12);
+      background:
+        radial-gradient(circle at 50% 24%, rgba(255,255,255,.68), rgba(255,255,255,.06) 24%, transparent 26%),
+        linear-gradient(180deg, rgba(212,177,106,.24), rgba(255,255,255,.08) 26%, rgba(2,6,23,.06) 52%, rgba(2,6,23,.02) 100%);
+    }
+
+    .id-card.human .portrait-placeholder {
+      background:
+        radial-gradient(circle at 50% 24%, rgba(255,255,255,.72), rgba(255,255,255,.08) 24%, transparent 26%),
+        linear-gradient(180deg, rgba(120,130,150,.18), rgba(255,255,255,.15) 32%, rgba(255,255,255,.08) 100%);
+      border-color: rgba(22,24,29,.12);
+    }
+
+    .portrait-placeholder::before,
+    .portrait-placeholder::after {
+      content: "";
+      position: absolute;
+      left: 20%;
+      right: 20%;
+      bottom: 12%;
+      height: 46%;
+      border-radius: 34px 34px 18px 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.48), rgba(255,255,255,.08));
+      opacity: .35;
+    }
+
+    .portrait-placeholder::after {
+      left: 34%;
+      right: 34%;
+      bottom: 61%;
+      height: 18%;
+      border-radius: 999px;
+      opacity: .52;
+    }
+
+    .portrait-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .meta-box {
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .id-card.human .meta-box {
+      background: rgba(255,255,255,.62);
+    }
+
+    .meta-label {
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--card-muted);
+    }
+
+    .meta-value {
+      margin-top: 5px;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .info-panel {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .identity-strip {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 13px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+    }
+
+    .id-card.human .identity-strip {
+      background: rgba(255,255,255,.72);
+    }
+
+    .identity-main {
+      min-width: 0;
+    }
+
+    .identity-name-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .identity-name {
+      min-width: 0;
+      flex: 1 1 auto;
+      font-size: clamp(22px, 3.2vw, 30px);
+      font-weight: 950;
+      letter-spacing: -.04em;
+      line-height: 1.05;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .identity-age {
+      flex: 0 0 auto;
+      font-size: clamp(14px, 1.9vw, 18px);
+      font-weight: 900;
+      letter-spacing: .02em;
+      color: var(--card-muted);
+      white-space: nowrap;
+    }
+
+    .owner-strip,
+    .description-strip {
+      padding: 11px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .owner-strip[hidden] {
+      display: none !important;
+    }
+
+    .id-card.human .owner-strip,
+    .id-card.human .description-strip {
+      background: rgba(255,255,255,.62);
+    }
+
+    .owner-label,
+    .description-label {
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--card-muted);
+    }
+
+    .owner-text {
+      margin-top: 6px;
+      font-size: 16px;
+      font-weight: 850;
+      line-height: 1.32;
+      color: var(--text);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .description-text {
+      margin-top: 6px;
+      font-size: 16px;
+      font-weight: 850;
+      line-height: 1.38;
+      color: var(--text);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .identity-tag {
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--line);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--card-muted);
+      white-space: nowrap;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .info-cell {
+      padding: 11px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .id-card.human .info-cell {
+      background: rgba(255,255,255,.62);
+    }
+
+    .field-label {
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--card-muted);
+    }
+
+    .field-value {
+      margin-top: 6px;
+      font-size: 16px;
+      font-weight: 850;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .note-box {
+      padding: 12px 13px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      min-height: 84px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .id-card.human .note-box {
+      background: rgba(255,255,255,.7);
+    }
+
+    .note-box::before {
+      content: attr(data-stamp);
+      position: absolute;
+      right: 14px;
+      bottom: 8px;
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      opacity: .06;
+      transform: rotate(-8deg);
+      pointer-events: none;
+      color: currentColor;
+    }
+
+    .note-title {
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--card-muted);
+      margin-bottom: 7px;
+    }
+
+    .note-text {
+      font-size: 13px;
+      line-height: 1.65;
+      color: inherit;
+    }
+
+    .card-bottom {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .barcode-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .warning-line {
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      border: 1px solid color-mix(in srgb, var(--warn-text) 18%, transparent);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .barcode {
+      position: relative;
+      height: 54px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background:
+        repeating-linear-gradient(90deg,
+          rgba(0,0,0,.95) 0 2px,
+          transparent 2px 4px,
+          rgba(0,0,0,.95) 4px 5px,
+          transparent 5px 8px,
+          rgba(0,0,0,.95) 8px 10px,
+          transparent 10px 12px,
+          rgba(0,0,0,.9) 12px 15px,
+          transparent 15px 18px,
+          rgba(0,0,0,.95) 18px 19px,
+          transparent 19px 22px);
+      background-size: 24px 100%;
+      background-repeat: repeat-x;
+      background-position: 10px 8px;
+      background-color: rgba(255,255,255,.9);
+      overflow: hidden;
+    }
+
+    .barcode::after {
+      content: attr(data-code);
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 6px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .2em;
+      color: #111827;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .security-block {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .qr {
+      width: 74px;
+      height: 74px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(90deg, transparent 0 8%, #111 8% 16%, transparent 16% 24%, #111 24% 28%, transparent 28% 36%, #111 36% 44%, transparent 44% 52%, #111 52% 60%, transparent 60% 68%, #111 68% 76%, transparent 76% 100%),
+        linear-gradient(transparent 0 8%, #111 8% 16%, transparent 16% 24%, #111 24% 32%, transparent 32% 44%, #111 44% 52%, transparent 52% 64%, #111 64% 72%, transparent 72% 100%),
+        linear-gradient(135deg, #fff, #e5e7eb);
+      background-blend-mode: normal;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .qr::before,
+    .qr::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border: 4px solid #111;
+      background: white;
+    }
+
+    .qr::before { top: 8px; left: 8px; }
+    .qr::after { bottom: 8px; right: 8px; }
+
+    .sig {
+      min-width: 150px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+    }
+
+    .id-card.human .sig {
+      background: rgba(255,255,255,.62);
+    }
+
+    .sig-label {
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--card-muted);
+    }
+
+    .sig-value {
+      margin-top: 7px;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .watermark {
+      position: absolute;
+      right: 18px;
+      top: 86px;
+      width: 140px;
+      height: 140px;
+      border-radius: 999px;
+      border: 1px dashed rgba(255,255,255,.14);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.14);
+      z-index: 0;
+      transform: rotate(-8deg);
+    }
+
+    .watermark::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .id-card.human .watermark {
+      border-style: solid;
+      color: rgba(239,68,68,.18);
+      border-color: rgba(239,68,68,.18);
+      font-size: 16px;
+      width: 170px;
+      height: 170px;
+      top: auto;
+      right: 24px;
+      bottom: 92px;
+      transform: rotate(-12deg);
+    }
+
+    .micro-line {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      font-size: 9px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--card-muted);
+      opacity: .9;
+      z-index: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .id-card.human .micro-line {
+      color: rgba(22,24,29,.5);
+    }
+
+    .tiny-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1080px) {
+      .layout { grid-template-columns: 1fr; }
+      .controls { position: static; }
+    }
+
+    @media (max-width: 820px) {
+      .preview-wrap { padding: 18px; }
+    }
+
+    @media (max-width: 640px) {
+      .page { padding-inline: 14px; }
+      .grid-2, .grid-3, .button-row { grid-template-columns: 1fr; }
+      .preview-wrap { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="hero">
+      <div>
+        <h1>Dystopian Registry Card Maker</h1>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="panel controls">
+        <div>
+          <h2 class="panel-title">카드 설정</h2>
+        </div>
+
+        <div class="section">
+          <h3>모드 · 프리셋</h3>
+          <div class="grid-2">
+            <div class="field">
+              <label for="mode">등록 유형</label>
+              <select id="mode">
+                <option value="beastman">수인 시민 등록증</option>
+                <option value="human">인간 자산 등록 카드</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="visualTheme">시각 톤</label>
+              <select id="visualTheme">
+                <option value="default">기본</option>
+                <option value="cold">차갑게</option>
+                <option value="warm">따뜻하게</option>
+              </select>
+            </div>
+          </div>
+          <div class="chips">
+            <button class="chip active" data-preset="beastman_citizen">Beastman Citizen</button>
+            <button class="chip" data-preset="beastman_security">Beastman Security</button>
+            <button class="chip" data-preset="human_pet">Human Pet Asset</button>
+            <button class="chip" data-preset="human_industrial">Human Industrial</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>기본 정보</h3>
+          <div class="grid-2">
+            <div class="field">
+              <label for="primaryName" id="labelPrimaryName">이름 / 자산명</label>
+              <input id="primaryName" type="text" maxlength="28" />
+            </div>
+            <div class="field">
+              <label for="age" id="labelAge">나이</label>
+              <input id="age" type="text" inputmode="numeric" maxlength="8" placeholder="28" />
+            </div>
+          </div>
+          <div class="field" id="ownerControlField" hidden>
+            <label for="ownerName" id="labelOwnerName">주인님 이름</label>
+            <input id="ownerName" type="text" maxlength="32" />
+          </div>
+          <div class="field">
+            <label for="secondaryLine" id="labelSecondaryLine">설명 / 상태</label>
+            <input id="secondaryLine" type="text" maxlength="52" />
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="field1" id="label1"></label>
+              <input id="field1" type="text" maxlength="28" />
+            </div>
+            <div class="field">
+              <label for="field4" id="label4"></label>
+              <input id="field4" type="text" maxlength="24" />
+            </div>
+          </div>
+          <div class="hint">계층, 등록 번호, 관리 메모 없이 핵심 정보만 보여줘.</div>
+        </div>
+
+        <div class="section">
+          <h3>이미지</h3>
+          <div class="field">
+            <label for="bgUrl">포트레이트 배경 URL</label>
+            <input id="bgUrl" type="url" placeholder="https://..." />
+          </div>
+          <div class="field">
+            <label for="bgUpload">포트레이트 배경 업로드</label>
+            <input id="bgUpload" type="file" accept="image/*" />
+          </div>
+          <div class="field">
+            <label for="portraitUpload">캐릭터 PNG 업로드</label>
+            <input id="portraitUpload" type="file" accept="image/*" />
+            <div class="hint">투명 배경 PNG가 가장 잘 맞아. 없으면 기본 실루엣이 유지돼.</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>포트레이트 배치</h3>
+          <div class="field">
+            <label for="portraitX">좌우 위치</label>
+            <div class="range-row">
+              <input id="portraitX" type="range" min="-160" max="160" value="0" />
+              <div class="range-value" id="portraitXVal">0</div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="portraitY">상하 위치</label>
+            <div class="range-row">
+              <input id="portraitY" type="range" min="-120" max="120" value="0" />
+              <div class="range-value" id="portraitYVal">0</div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="portraitScale">크기</label>
+            <div class="range-row">
+              <input id="portraitScale" type="range" min="36" max="170" value="108" />
+              <div class="range-value" id="portraitScaleVal">86%</div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="portraitOpacity">투명도</label>
+            <div class="range-row">
+              <input id="portraitOpacity" type="range" min="20" max="100" value="100" />
+              <div class="range-value" id="portraitOpacityVal">100%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn primary" id="saveBtn">PNG 저장</button>
+          <button class="btn secondary" id="resetPortraitBtn">포트레이트 초기화</button>
+          <button class="btn ghost" id="resetAllBtn">전체 초기화</button>
+        </div>
+        <div class="status" id="status"></div>
+      </aside>
+
+      <section class="panel preview-panel">
+        <div class="preview-head">
+          <div>
+            <h2 class="panel-title">실시간 미리보기</h2>
+            <div class="preview-note">저장 시 카드 본체만 PNG로 출력됩니다.</div>
+          </div>
+        </div>
+
+        <div class="preview-wrap" id="previewWrap">
+          <div class="preview-stage" id="previewStage">
+            <div class="card-shell" id="cardShell">
+              <div class="id-card beastman" id="exportCard">
+              <div class="watermark" id="watermark">AWAKENED</div>
+              <div class="micro-line" id="microLine">Great Awakening verified · AVATTOIR Board civil registry channel · survival privilege sealed</div>
+
+              <div class="card-inner">
+                <div class="card-top">
+                  <div class="card-title-group">
+                    <div class="card-kicker" id="cardKicker">AVATTOIR Civil Registry</div>
+                    <h2 class="card-title" id="cardTitle">AVATTOIR CIVIL REGISTRY</h2>
+                    <p class="card-subtitle" id="cardSubtitle">Evolution-verified beastman identity card</p>
+                  </div>
+                  <div class="mode-chip" id="modeChip">BEASTMAN CITIZEN</div>
+                </div>
+
+                <div class="card-main">
+                  <div class="portrait-panel">
+                                        <div class="portrait-box" id="portraitBox">
+                      <div class="portrait-area">
+                        <div class="portrait-inner" id="portraitInner">
+                          <div class="portrait-placeholder" id="portraitPlaceholder"></div>
+                          <img id="portraitImg" class="portrait-img" alt="portrait" crossorigin="anonymous" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="info-panel">
+                    <div class="identity-strip">
+                      <div class="identity-main">
+                        <div class="identity-name-row">
+                          <div class="identity-name" id="identityName">RHEA VOSS</div>
+                          <div class="identity-age" id="identityAge">28</div>
+                        </div>
+                      </div>
+                      <div class="identity-tag" id="identityTag">Citizen</div>
+                    </div>
+
+                    <div class="owner-strip" id="ownerStrip" hidden>
+                      <div class="owner-label" id="ownerLabel">Owner Name</div>
+                      <div class="owner-text" id="ownerText">Lady Seraphine Vale</div>
+                    </div>
+
+                    <div class="description-strip">
+                      <div class="description-label" id="descriptionLabel">Description</div>
+                      <div class="description-text" id="descriptionText">Predator lineage registry / urban high district resident</div>
+                    </div>
+
+                    <div class="info-grid">
+                      <div class="info-cell"><div class="field-label" id="fieldLabel1"></div><div class="field-value" id="fieldValue1"></div></div>
+                      <div class="info-cell"><div class="field-label" id="fieldLabel4"></div><div class="field-value" id="fieldValue4"></div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-bottom">
+                  <div class="barcode-block">
+                    <div class="warning-line" id="warningView"></div>
+                    <div class="barcode" id="barcode" data-code="AX-77-2049-11"></div>
+                  </div>
+                  <div class="security-block">
+                    <div class="qr"></div>
+                    <div class="sig">
+                      <div class="sig-label" id="sigLabel">Issuing Authority</div>
+                      <div class="sig-value" id="sigValue">AVATTOIR Board Auxiliary</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'dystopian_registry_card_maker_v2_minimal';
+
+    const MODE_CONFIG = {
+      beastman: {
+        controlLabels: [
+          '종족 라인', '소속 / 기관'
+        ],
+        ownerControlLabel: '주인님 이름',
+        ownerLabel: 'Owner Name',
+        ownerPlaceholder: '',
+        descriptionControlLabel: '설명 / 상태',
+        descriptionLabel: 'Description',
+        previewLabels: [
+          'Species Line', 'Affiliation'
+        ],
+        cardKicker: 'AVATTOIR Civil Registry',
+        cardTitle: 'AVATTOIR CIVIL REGISTRY',
+        cardSubtitle: 'Evolution-verified beastman identity card',
+        modeChip: 'BEASTMAN CITIZEN',
+        portraitLabel: 'Civil Portrait',
+        portraitMini: 'BIO VERIFIED',
+        sigLabel: 'Issuing Authority',
+        watermark: 'AWAKENED',
+        microLine: 'Great Awakening verified · AVATTOIR Board civil registry channel · survival privilege sealed',
+        warningLine: 'Authorized beastman passage · priority rights protected by civil hierarchy'
+      },
+      human: {
+        controlLabels: [
+          '처리 타입', '등록 시설'
+        ],
+        ownerControlLabel: '주인님 이름',
+        ownerLabel: 'Owner Name',
+        ownerPlaceholder: 'Lady Seraphine Vale',
+        descriptionControlLabel: '설명 / 상태',
+        descriptionLabel: 'Description',
+        previewLabels: [
+          'Processing Type', 'Registry Site'
+        ],
+        cardKicker: 'Human Asset Registration',
+        cardTitle: 'HUMAN ASSET REGISTRATION',
+        cardSubtitle: 'Controlled property circulation permit',
+        modeChip: 'HUMAN PROPERTY',
+        portraitLabel: 'Asset Visual',
+        portraitMini: 'PROPERTY LOG',
+        sigLabel: 'Owner / Custodian',
+        watermark: 'PROPERTY',
+        microLine: 'Muzzle required for outdoor movement · property damage law applies · pest control priority enabled',
+        warningLine: 'Muzzle required · outdoor movement only with owner supervision'
+      }
+    };
+
+    const PRESETS = {
+      beastman_citizen: {
+        mode: 'beastman',
+        visualTheme: 'default',
+        primaryName: 'RHEA VOSS',
+        age: '28',
+        ownerName: '',
+        secondaryLine: 'Predator lineage registry / urban high district resident',
+        field1: 'Canis Lupus / Predator',
+        field4: 'AVATTOIR Board Auxiliary',
+        portraitX: 0,
+        portraitY: 0,
+        portraitScale: 108,
+        portraitOpacity: 100
+      },
+      beastman_security: {
+        mode: 'beastman',
+        visualTheme: 'cold',
+        primaryName: 'KAIN MERCER',
+        age: '34',
+        ownerName: '',
+        secondaryLine: 'Instinct Control tactical branch / pacify protocol carrier',
+        field1: 'Panthera Tigris / Predator',
+        field4: 'Instinct Control',
+        portraitX: 6,
+        portraitY: 4,
+        portraitScale: 112,
+        portraitOpacity: 100
+      },
+      human_pet: {
+        mode: 'human',
+        visualTheme: 'warm',
+        primaryName: 'Asset H-02814',
+        age: '19',
+        ownerName: 'Lady Seraphine Vale',
+        secondaryLine: 'Companion / display stock · luxury custody circulation',
+        field1: 'Companion Retrofit',
+        field4: 'Eden Boutique',
+        portraitX: 0,
+        portraitY: 0,
+        portraitScale: 106,
+        portraitOpacity: 100
+      },
+      human_industrial: {
+        mode: 'human',
+        visualTheme: 'cold',
+        primaryName: 'Asset H-77102',
+        age: '23',
+        ownerName: 'Supervisor M. Crowe',
+        secondaryLine: 'Industrial / expendable logistics stock · route-certified',
+        field1: 'Labor Conditioning',
+        field4: 'Homo-Gen Industries',
+        portraitX: 0,
+        portraitY: 2,
+        portraitScale: 104,
+        portraitOpacity: 100
+      }
+    };
+
+    const ids = [
+      'mode','visualTheme','primaryName','age','ownerName','secondaryLine','field1','field4',
+      'bgUrl','portraitX','portraitY','portraitScale','portraitOpacity'
+    ];
+
+    const elements = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+    const portraitUpload = document.getElementById('portraitUpload');
+    const bgUpload = document.getElementById('bgUpload');
+    const statusEl = document.getElementById('status');
+    const exportCard = document.getElementById('exportCard');
+    const previewWrap = document.getElementById('previewWrap');
+    const previewStage = document.getElementById('previewStage');
+    const cardShell = document.getElementById('cardShell');
+    const portraitBox = document.getElementById('portraitBox');
+    const portraitInner = document.getElementById('portraitInner');
+    const portraitImg = document.getElementById('portraitImg');
+    const portraitPlaceholder = document.getElementById('portraitPlaceholder');
+    const barcode = document.getElementById('barcode');
+
+    let uploadedPortraitUrl = '';
+    let uploadedBgUrl = '';
+
+    function $(id){ return document.getElementById(id); }
+
+    function updateRangeDisplays() {
+      $('portraitXVal').textContent = elements.portraitX.value;
+      $('portraitYVal').textContent = elements.portraitY.value;
+      $('portraitScaleVal').textContent = elements.portraitScale.value + '%';
+      $('portraitOpacityVal').textContent = elements.portraitOpacity.value + '%';
+    }
+
+    function normalizeBarcode(value) {
+      const clean = (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return (clean || 'AX77204911').replace(/(.{4})/g, '$1 ').trim();
+    }
+
+    function applyVisualTone() {
+      const mode = elements.mode.value;
+      const tone = elements.visualTheme.value;
+      exportCard.style.filter = '';
+      exportCard.style.boxShadow = '';
+
+      if (mode === 'beastman') {
+        if (tone === 'cold') {
+          exportCard.style.filter = 'hue-rotate(18deg) saturate(1.05)';
+        } else if (tone === 'warm') {
+          exportCard.style.filter = 'sepia(.12) saturate(1.1)';
+        }
+      } else {
+        if (tone === 'cold') {
+          exportCard.style.filter = 'saturate(.88) contrast(1.04)';
+        } else if (tone === 'warm') {
+          exportCard.style.filter = 'sepia(.14) saturate(1.06)';
+        }
+      }
+    }
+
+
+    function updatePreviewScale() {
+      const naturalWidth = 920;
+      const wrapWidth = Math.max(280, previewWrap.clientWidth - 2);
+      const scale = Math.min(1, wrapWidth / naturalWidth);
+      cardShell.style.setProperty('--preview-scale', scale.toFixed(4));
+
+      requestAnimationFrame(() => {
+        const scaledHeight = exportCard.offsetHeight * scale;
+        previewStage.style.height = `${Math.ceil(scaledHeight)}px`;
+      });
+    }
+
+    function applyModeLabels() {
+      const mode = elements.mode.value;
+      const config = MODE_CONFIG[mode];
+
+      exportCard.classList.toggle('beastman', mode === 'beastman');
+      exportCard.classList.toggle('human', mode === 'human');
+
+      const isHuman = mode === 'human';
+
+      $('labelPrimaryName').textContent = mode === 'beastman' ? '이름' : '자산명';
+      $('labelAge').textContent = '나이';
+      $('labelOwnerName').textContent = config.ownerControlLabel;
+      $('labelSecondaryLine').textContent = mode === 'beastman' ? '등록 설명' : '자산 설명';
+      $('ownerName').placeholder = config.ownerPlaceholder || '';
+      $('ownerControlField').hidden = !isHuman;
+      $('ownerStrip').hidden = !isHuman;
+      $('ownerLabel').textContent = config.ownerLabel;
+
+      $('label1').textContent = config.controlLabels[0];
+      $('label4').textContent = config.controlLabels[1];
+      $('fieldLabel1').textContent = config.previewLabels[0];
+      $('fieldLabel4').textContent = config.previewLabels[1];
+
+      $('cardKicker').textContent = config.cardKicker;
+      $('cardTitle').textContent = config.cardTitle;
+      $('cardSubtitle').textContent = config.cardSubtitle;
+      $('modeChip').textContent = config.modeChip;
+      $('sigLabel').textContent = config.sigLabel;
+      $('watermark').textContent = config.watermark;
+      $('microLine').textContent = config.microLine;
+    }
+
+    function renderCard() {
+      applyModeLabels();
+      applyVisualTone();
+      updateRangeDisplays();
+
+      const modeConfig = MODE_CONFIG[elements.mode.value];
+      $('identityName').textContent = elements.primaryName.value || '—';
+      const ageValue = (elements.age.value || '').trim();
+      $('identityAge').textContent = ageValue;
+      $('identityAge').style.display = ageValue ? 'block' : 'none';
+      $('descriptionLabel').textContent = modeConfig.descriptionLabel;
+      $('descriptionText').textContent = elements.secondaryLine.value || modeConfig.cardSubtitle;
+      $('ownerText').textContent = elements.ownerName.value || '—';
+      $('identityTag').textContent = elements.mode.value === 'beastman' ? 'Citizen' : 'Property';
+
+      $('fieldValue1').textContent = elements.field1.value || '—';
+      $('fieldValue4').textContent = elements.field4.value || '—';
+
+      $('warningView').textContent = modeConfig.warningLine;
+      $('sigValue').textContent = elements.field4.value || '—';
+      barcode.dataset.code = normalizeBarcode(elements.primaryName.value || elements.field1.value);
+
+      $('cardSubtitle').textContent = modeConfig.cardSubtitle;
+      $('microLine').textContent = modeConfig.microLine;
+
+      const x = Number(elements.portraitX.value);
+      const y = Number(elements.portraitY.value);
+      const scale = Number(elements.portraitScale.value) / 100;
+      const opacity = Number(elements.portraitOpacity.value) / 100;
+      portraitInner.style.transform = `translate(calc(-50% + ${x}px), ${y}px) scale(${scale})`;
+      portraitInner.style.opacity = opacity;
+
+      const bg = uploadedBgUrl || elements.bgUrl.value.trim();
+      if (bg) {
+        portraitBox.style.backgroundImage = `linear-gradient(180deg, rgba(15,23,42,.22), rgba(15,23,42,.5)), url(${bg})`;
+      } else {
+        portraitBox.style.backgroundImage = `linear-gradient(180deg, rgba(15,23,42,.22), rgba(15,23,42,.5)), url('https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=80')`;
+      }
+
+      if (uploadedPortraitUrl) {
+        portraitImg.src = uploadedPortraitUrl;
+        portraitImg.style.display = 'block';
+        portraitPlaceholder.style.display = 'none';
+      } else {
+        portraitImg.style.display = 'none';
+        portraitPlaceholder.style.display = 'block';
+      }
+
+      saveState();
+      updatePreviewScale();
+    }
+
+    function saveState() {
+      const data = Object.fromEntries(ids.map(id => [id, elements[id].value]));
+      data.uploadedPortraitUrl = uploadedPortraitUrl;
+      data.uploadedBgUrl = uploadedBgUrl;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return false;
+      try {
+        const data = JSON.parse(saved);
+        ids.forEach(id => {
+          if (data[id] !== undefined) elements[id].value = data[id];
+        });
+        uploadedPortraitUrl = data.uploadedPortraitUrl || '';
+        uploadedBgUrl = data.uploadedBgUrl || '';
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+      clearTimeout(setStatus.timer);
+      setStatus.timer = setTimeout(() => { statusEl.textContent = ''; }, 2400);
+    }
+
+    function applyPreset(name) {
+      const preset = PRESETS[name];
+      if (!preset) return;
+      Object.entries(preset).forEach(([key, value]) => {
+        if (elements[key]) elements[key].value = value;
+      });
+      document.querySelectorAll('.chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.preset === name);
+      });
+      renderCard();
+      setStatus('프리셋 적용 완료');
+    }
+
+    ids.forEach(id => {
+      elements[id].addEventListener('input', renderCard);
+      elements[id].addEventListener('change', renderCard);
+    });
+
+    portraitUpload.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      uploadedPortraitUrl = URL.createObjectURL(file);
+      renderCard();
+      setStatus('포트레이트 업로드 완료');
+    });
+
+    bgUpload.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      uploadedBgUrl = URL.createObjectURL(file);
+      renderCard();
+      setStatus('배경 업로드 완료');
+    });
+
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => applyPreset(chip.dataset.preset));
+    });
+
+    $('resetPortraitBtn').addEventListener('click', () => {
+      elements.portraitX.value = 0;
+      elements.portraitY.value = 0;
+      elements.portraitScale.value = 86;
+      elements.portraitOpacity.value = 100;
+      renderCard();
+      setStatus('포트레이트 위치 초기화');
+    });
+
+    $('resetAllBtn').addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      uploadedPortraitUrl = '';
+      uploadedBgUrl = '';
+      portraitUpload.value = '';
+      bgUpload.value = '';
+      applyPreset('beastman_citizen');
+      setStatus('전체 초기화 완료');
+    });
+
+    $('saveBtn').addEventListener('click', async () => {
+      try {
+        setStatus('PNG 저장 중...');
+        const canvas = await html2canvas(exportCard, {
+          backgroundColor: null,
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+        const link = document.createElement('a');
+        link.download = `registry-card-${elements.mode.value}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        setStatus('PNG 저장 완료');
+      } catch (err) {
+        console.error(err);
+        setStatus('저장 중 오류가 발생했어');
+      }
+    });
+
+    function init() {
+      const loaded = loadState();
+      if (!loaded) {
+        applyPreset('beastman_citizen');
+      } else {
+        renderCard();
+      }
+      updatePreviewScale();
+    }
+
+    window.addEventListener('resize', updatePreviewScale);
+    init();
+  </script>
+</body>
+</html>
