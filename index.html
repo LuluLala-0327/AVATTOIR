@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dystopian Registry Card Maker</title>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     :root {
       --bg: #05070d;
@@ -15,6 +14,8 @@
       --accent: #d4b16a;
       --shadow: 0 24px 60px rgba(0,0,0,.4);
       --font: Inter, ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      --sticky-top: 18px;
+      --panel-height: calc(100vh - 36px);
     }
 
     * { box-sizing: border-box; }
@@ -87,7 +88,7 @@
       display: grid;
       grid-template-columns: minmax(320px, 410px) minmax(380px, 1fr);
       gap: 22px;
-      align-items: start;
+      align-items: stretch;
     }
 
     .panel {
@@ -101,7 +102,13 @@
     .controls {
       padding: 18px;
       position: sticky;
-      top: 18px;
+      top: var(--sticky-top);
+      min-height: var(--panel-height);
+      max-height: var(--panel-height);
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
     }
 
     .panel-title {
@@ -285,6 +292,13 @@
 
     .preview-panel {
       padding: 18px;
+      position: sticky;
+      top: var(--sticky-top);
+      min-height: var(--panel-height);
+      max-height: var(--panel-height);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     .preview-head {
@@ -303,6 +317,8 @@
     }
 
     .preview-wrap {
+      flex: 1 1 auto;
+      min-height: 0;
       padding: 28px;
       border-radius: 28px;
       border: 1px solid rgba(255,255,255,.06);
@@ -310,12 +326,44 @@
         radial-gradient(circle at top, rgba(56,189,248,.08), transparent 26%),
         radial-gradient(circle at bottom, rgba(249,115,22,.07), transparent 24%),
         linear-gradient(180deg, rgba(15, 23, 42, .56), rgba(2, 6, 23, .92));
-      overflow: hidden;
+      overflow: auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      scrollbar-gutter: stable both-edges;
+    }
+
+
+    .controls::-webkit-scrollbar,
+    .preview-wrap::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .controls::-webkit-scrollbar-track,
+    .preview-wrap::-webkit-scrollbar-track {
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+    }
+
+    .controls::-webkit-scrollbar-thumb,
+    .preview-wrap::-webkit-scrollbar-thumb {
+      background: rgba(148,163,184,.42);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+
+    .controls::-webkit-scrollbar-thumb:hover,
+    .preview-wrap::-webkit-scrollbar-thumb:hover {
+      background: rgba(125,211,252,.55);
+      background-clip: padding-box;
     }
 
     .preview-stage {
       position: relative;
       width: 100%;
+      min-height: 620px;
     }
 
     .card-shell {
@@ -555,28 +603,37 @@
       inset: 0;
       z-index: 2;
       overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0 10px;
     }
 
     .portrait-inner {
       position: absolute;
       left: 50%;
       bottom: 0;
-      width: 92%;
+      width: auto;
+      max-width: 100%;
       transform: translate(-50%, 0) scale(1.02);
       transform-origin: center bottom;
       display: flex;
       align-items: flex-end;
       justify-content: center;
       filter: drop-shadow(0 18px 28px rgba(0,0,0,.4));
+      line-height: 0;
     }
 
     .portrait-img {
       display: none;
-      width: 100%;
+      width: auto;
       height: auto;
+      max-width: min(320px, calc(100vw - 48px));
+      max-height: 500px;
       object-fit: contain;
       -webkit-user-drag: none;
       user-select: none;
+      image-rendering: auto;
     }
 
     .portrait-placeholder {
@@ -710,7 +767,6 @@
       white-space: nowrap;
     }
 
-    .owner-strip,
     .description-strip {
       padding: 11px 12px;
       border-radius: 14px;
@@ -719,32 +775,16 @@
       min-width: 0;
     }
 
-    .owner-strip[hidden] {
-      display: none !important;
-    }
-
-    .id-card.human .owner-strip,
     .id-card.human .description-strip {
       background: rgba(255,255,255,.62);
     }
 
-    .owner-label,
     .description-label {
       font-size: 9px;
       letter-spacing: .12em;
       text-transform: uppercase;
       font-weight: 900;
       color: var(--card-muted);
-    }
-
-    .owner-text {
-      margin-top: 6px;
-      font-size: 16px;
-      font-weight: 850;
-      line-height: 1.32;
-      color: var(--text);
-      white-space: normal;
-      overflow-wrap: anywhere;
     }
 
     .description-text {
@@ -1047,8 +1087,28 @@
     }
 
     @media (max-width: 1080px) {
+      :root {
+        --panel-height: auto;
+      }
+
       .layout { grid-template-columns: 1fr; }
-      .controls { position: static; }
+      .controls, .preview-panel {
+        position: static;
+        min-height: 0;
+        max-height: none;
+      }
+
+      .controls {
+        overflow: visible;
+      }
+
+      .preview-panel {
+        overflow: visible;
+      }
+
+      .preview-wrap {
+        overflow: auto;
+      }
     }
 
     @media (max-width: 820px) {
@@ -1114,10 +1174,6 @@
               <label for="age" id="labelAge">나이</label>
               <input id="age" type="text" inputmode="numeric" maxlength="8" placeholder="28" />
             </div>
-          </div>
-          <div class="field" id="ownerControlField" hidden>
-            <label for="ownerName" id="labelOwnerName">주인님 이름</label>
-            <input id="ownerName" type="text" maxlength="32" />
           </div>
           <div class="field">
             <label for="secondaryLine" id="labelSecondaryLine">설명 / 상태</label>
@@ -1220,7 +1276,7 @@
 
                 <div class="card-main">
                   <div class="portrait-panel">
-                                        <div class="portrait-box" id="portraitBox">
+                    <div class="portrait-box" id="portraitBox">
                       <div class="portrait-area">
                         <div class="portrait-inner" id="portraitInner">
                           <div class="portrait-placeholder" id="portraitPlaceholder"></div>
@@ -1239,11 +1295,6 @@
                         </div>
                       </div>
                       <div class="identity-tag" id="identityTag">Citizen</div>
-                    </div>
-
-                    <div class="owner-strip" id="ownerStrip" hidden>
-                      <div class="owner-label" id="ownerLabel">Owner Name</div>
-                      <div class="owner-text" id="ownerText">Lady Seraphine Vale</div>
                     </div>
 
                     <div class="description-strip">
@@ -1287,9 +1338,6 @@
         controlLabels: [
           '종족 라인', '소속 / 기관'
         ],
-        ownerControlLabel: '주인님 이름',
-        ownerLabel: 'Owner Name',
-        ownerPlaceholder: '',
         descriptionControlLabel: '설명 / 상태',
         descriptionLabel: 'Description',
         previewLabels: [
@@ -1308,15 +1356,12 @@
       },
       human: {
         controlLabels: [
-          '처리 타입', '등록 시설'
+          '처리 타입', '소유 주체'
         ],
-        ownerControlLabel: '주인님 이름',
-        ownerLabel: 'Owner Name',
-        ownerPlaceholder: 'Lady Seraphine Vale',
         descriptionControlLabel: '설명 / 상태',
         descriptionLabel: 'Description',
         previewLabels: [
-          'Processing Type', 'Registry Site'
+          'Processing Type', 'Owner'
         ],
         cardKicker: 'Human Asset Registration',
         cardTitle: 'HUMAN ASSET REGISTRATION',
@@ -1337,7 +1382,6 @@
         visualTheme: 'default',
         primaryName: 'RHEA VOSS',
         age: '28',
-        ownerName: '',
         secondaryLine: 'Predator lineage registry / urban high district resident',
         field1: 'Canis Lupus / Predator',
         field4: 'AVATTOIR Board Auxiliary',
@@ -1351,7 +1395,6 @@
         visualTheme: 'cold',
         primaryName: 'KAIN MERCER',
         age: '34',
-        ownerName: '',
         secondaryLine: 'Instinct Control tactical branch / pacify protocol carrier',
         field1: 'Panthera Tigris / Predator',
         field4: 'Instinct Control',
@@ -1365,7 +1408,6 @@
         visualTheme: 'warm',
         primaryName: 'Asset H-02814',
         age: '19',
-        ownerName: 'Lady Seraphine Vale',
         secondaryLine: 'Companion / display stock · luxury custody circulation',
         field1: 'Companion Retrofit',
         field4: 'Eden Boutique',
@@ -1379,7 +1421,6 @@
         visualTheme: 'cold',
         primaryName: 'Asset H-77102',
         age: '23',
-        ownerName: 'Supervisor M. Crowe',
         secondaryLine: 'Industrial / expendable logistics stock · route-certified',
         field1: 'Labor Conditioning',
         field4: 'Homo-Gen Industries',
@@ -1391,7 +1432,7 @@
     };
 
     const ids = [
-      'mode','visualTheme','primaryName','age','ownerName','secondaryLine','field1','field4',
+      'mode','visualTheme','primaryName','age','secondaryLine','field1','field4',
       'bgUrl','portraitX','portraitY','portraitScale','portraitOpacity'
     ];
 
@@ -1420,6 +1461,8 @@
       $('portraitScaleVal').textContent = elements.portraitScale.value + '%';
       $('portraitOpacityVal').textContent = elements.portraitOpacity.value + '%';
     }
+
+    const DEFAULT_PORTRAIT_BG = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%271200%27%20height%3D%27900%27%20viewBox%3D%270%200%201200%20900%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%2325324a%27/%3E%3Cstop%20offset%3D%2750%25%27%20stop-color%3D%27%230f172a%27/%3E%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%2305070d%27/%3E%3C/linearGradient%3E%3CradialGradient%20id%3D%27r1%27%20cx%3D%2720%25%27%20cy%3D%2715%25%27%20r%3D%2745%25%27%3E%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27rgba%28212%2C177%2C106%2C0.35%29%27/%3E%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27rgba%28212%2C177%2C106%2C0%29%27/%3E%3C/radialGradient%3E%3CradialGradient%20id%3D%27r2%27%20cx%3D%2785%25%27%20cy%3D%2778%25%27%20r%3D%2738%25%27%3E%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27rgba%2856%2C189%2C248%2C0.25%29%27/%3E%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27rgba%2856%2C189%2C248%2C0%29%27/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect%20width%3D%271200%27%20height%3D%27900%27%20fill%3D%27url%28%23g%29%27/%3E%3Crect%20width%3D%271200%27%20height%3D%27900%27%20fill%3D%27url%28%23r1%29%27/%3E%3Crect%20width%3D%271200%27%20height%3D%27900%27%20fill%3D%27url%28%23r2%29%27/%3E%3Cg%20stroke%3D%27rgba%28255%2C255%2C255%2C0.06%29%27%20stroke-width%3D%271%27%3E%3Cpath%20d%3D%27M0%20120H1200%27/%3E%3Cpath%20d%3D%27M0%20260H1200%27/%3E%3Cpath%20d%3D%27M0%20400H1200%27/%3E%3Cpath%20d%3D%27M0%20540H1200%27/%3E%3Cpath%20d%3D%27M0%20680H1200%27/%3E%3Cpath%20d%3D%27M0%20820H1200%27/%3E%3Cpath%20d%3D%27M140%200V900%27/%3E%3Cpath%20d%3D%27M340%200V900%27/%3E%3Cpath%20d%3D%27M540%200V900%27/%3E%3Cpath%20d%3D%27M740%200V900%27/%3E%3Cpath%20d%3D%27M940%200V900%27/%3E%3Cpath%20d%3D%27M1140%200V900%27/%3E%3C/g%3E%3C/svg%3E";
 
     function normalizeBarcode(value) {
       const clean = (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -1467,16 +1510,9 @@
       exportCard.classList.toggle('beastman', mode === 'beastman');
       exportCard.classList.toggle('human', mode === 'human');
 
-      const isHuman = mode === 'human';
-
       $('labelPrimaryName').textContent = mode === 'beastman' ? '이름' : '자산명';
       $('labelAge').textContent = '나이';
-      $('labelOwnerName').textContent = config.ownerControlLabel;
       $('labelSecondaryLine').textContent = mode === 'beastman' ? '등록 설명' : '자산 설명';
-      $('ownerName').placeholder = config.ownerPlaceholder || '';
-      $('ownerControlField').hidden = !isHuman;
-      $('ownerStrip').hidden = !isHuman;
-      $('ownerLabel').textContent = config.ownerLabel;
 
       $('label1').textContent = config.controlLabels[0];
       $('label4').textContent = config.controlLabels[1];
@@ -1504,7 +1540,6 @@
       $('identityAge').style.display = ageValue ? 'block' : 'none';
       $('descriptionLabel').textContent = modeConfig.descriptionLabel;
       $('descriptionText').textContent = elements.secondaryLine.value || modeConfig.cardSubtitle;
-      $('ownerText').textContent = elements.ownerName.value || '—';
       $('identityTag').textContent = elements.mode.value === 'beastman' ? 'Citizen' : 'Property';
 
       $('fieldValue1').textContent = elements.field1.value || '—';
@@ -1528,14 +1563,15 @@
       if (bg) {
         portraitBox.style.backgroundImage = `linear-gradient(180deg, rgba(15,23,42,.22), rgba(15,23,42,.5)), url(${bg})`;
       } else {
-        portraitBox.style.backgroundImage = `linear-gradient(180deg, rgba(15,23,42,.22), rgba(15,23,42,.5)), url('https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=80')`;
+        portraitBox.style.backgroundImage = `linear-gradient(180deg, rgba(15,23,42,.22), rgba(15,23,42,.5)), url(${DEFAULT_PORTRAIT_BG})`;
       }
 
       if (uploadedPortraitUrl) {
-        portraitImg.src = uploadedPortraitUrl;
+        if (portraitImg.src !== uploadedPortraitUrl) portraitImg.src = uploadedPortraitUrl;
         portraitImg.style.display = 'block';
         portraitPlaceholder.style.display = 'none';
       } else {
+        portraitImg.removeAttribute('src');
         portraitImg.style.display = 'none';
         portraitPlaceholder.style.display = 'block';
       }
@@ -1600,6 +1636,10 @@
       setStatus('포트레이트 업로드 완료');
     });
 
+    portraitImg.addEventListener('load', () => {
+      updatePreviewScale();
+    });
+
     bgUpload.addEventListener('change', (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -1631,22 +1671,545 @@
       setStatus('전체 초기화 완료');
     });
 
+
+    function roundRectPath(ctx, x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + w - radius, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+      ctx.lineTo(x + w, y + h - radius);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+      ctx.lineTo(x + radius, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function fillRoundRect(ctx, x, y, w, h, r, fillStyle) {
+      ctx.save();
+      roundRectPath(ctx, x, y, w, h, r);
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function strokeRoundRect(ctx, x, y, w, h, r, strokeStyle, lineWidth = 1) {
+      ctx.save();
+      roundRectPath(ctx, x, y, w, h, r);
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawGridPattern(ctx, x, y, w, h, step, alpha = 0.08) {
+      ctx.save();
+      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+      ctx.lineWidth = 1;
+      for (let ix = x; ix <= x + w; ix += step) {
+        ctx.beginPath();
+        ctx.moveTo(ix, y);
+        ctx.lineTo(ix, y + h);
+        ctx.stroke();
+      }
+      for (let iy = y; iy <= y + h; iy += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, iy);
+        ctx.lineTo(x + w, iy);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawText(ctx, text, x, y, options = {}) {
+      const {
+        font = '16px sans-serif',
+        color = '#fff',
+        align = 'left',
+        baseline = 'alphabetic',
+        maxWidth,
+        shadow,
+        letterSpacing = 0
+      } = options;
+      ctx.save();
+      ctx.font = font;
+      ctx.fillStyle = color;
+      ctx.textAlign = align;
+      ctx.textBaseline = baseline;
+      if (shadow) {
+        ctx.shadowColor = shadow.color || 'rgba(0,0,0,.35)';
+        ctx.shadowBlur = shadow.blur || 0;
+        ctx.shadowOffsetX = shadow.offsetX || 0;
+        ctx.shadowOffsetY = shadow.offsetY || 0;
+      }
+      if (!letterSpacing) {
+        ctx.fillText(text, x, y, maxWidth);
+      } else {
+        const chars = String(text).split('');
+        let cursor = x;
+        if (align === 'center') {
+          const totalWidth = chars.reduce((sum, ch) => sum + ctx.measureText(ch).width, 0) + (chars.length - 1) * letterSpacing;
+          cursor = x - totalWidth / 2;
+        } else if (align === 'right') {
+          const totalWidth = chars.reduce((sum, ch) => sum + ctx.measureText(ch).width, 0) + (chars.length - 1) * letterSpacing;
+          cursor = x - totalWidth;
+        }
+        for (const ch of chars) {
+          ctx.fillText(ch, cursor, y);
+          cursor += ctx.measureText(ch).width + letterSpacing;
+        }
+      }
+      ctx.restore();
+    }
+
+    function fitText(ctx, text, maxWidth, startPx, family, weight = '800') {
+      let size = startPx;
+      while (size > 10) {
+        ctx.font = `${weight} ${size}px ${family}`;
+        if (ctx.measureText(text).width <= maxWidth) return size;
+        size -= 1;
+      }
+      return size;
+    }
+
+    function wrapTextLines(ctx, text, maxWidth) {
+      const words = String(text || '').split(/\s+/).filter(Boolean);
+      if (!words.length) return [''];
+      const lines = [];
+      let line = words[0];
+      for (let i = 1; i < words.length; i++) {
+        const test = `${line} ${words[i]}`;
+        if (ctx.measureText(test).width <= maxWidth) line = test;
+        else {
+          lines.push(line);
+          line = words[i];
+        }
+      }
+      lines.push(line);
+      return lines;
+    }
+
+    function loadImageSafe(src) {
+      return new Promise((resolve, reject) => {
+        if (!src) return resolve(null);
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`이미지 로드 실패: ${src.slice(0, 80)}`));
+        if (/^https?:/i.test(src)) img.crossOrigin = 'anonymous';
+        img.src = src;
+      });
+    }
+
+    function getCurrentPortraitSrc() {
+      const src = portraitImg.getAttribute('src') || '';
+      return (portraitImg.style.display !== 'none' && src) ? src : '';
+    }
+
+    function getCurrentBackgroundSrc() {
+      return uploadedBgUrl || elements.bgUrl.value.trim() || '';
+    }
+
+    function getExportState() {
+      return {
+        mode: elements.mode.value,
+        primaryName: $('identityName').textContent || '—',
+        age: $('identityAge').style.display === 'none' ? '' : ($('identityAge').textContent || ''),
+        description: $('descriptionText').textContent || '',
+        field1Label: $('fieldLabel1').textContent || '',
+        field1Value: $('fieldValue1').textContent || '—',
+        field4Label: $('fieldLabel4').textContent || '',
+        field4Value: $('fieldValue4').textContent || '—',
+        ownerName: $('ownerNameView') ? $('ownerNameView').textContent : '',
+        ownerVisible: $('ownerStrip') ? getComputedStyle($('ownerStrip')).display !== 'none' : false,
+        warning: $('warningView').textContent || '',
+        sigLabel: $('sigLabel').textContent || '',
+        sigValue: $('sigValue').textContent || '—',
+        identityTag: $('identityTag').textContent || '',
+        cardKicker: $('cardKicker').textContent || '',
+        cardTitle: $('cardTitle').textContent || '',
+        cardSubtitle: $('cardSubtitle').textContent || '',
+        modeChip: $('modeChip').textContent || '',
+        watermark: $('watermark').textContent || '',
+        microLine: $('microLine').textContent || '',
+        barcodeCode: barcode.dataset.code || 'AX77204911',
+        portraitX: Number(elements.portraitX.value),
+        portraitY: Number(elements.portraitY.value),
+        portraitScale: Number(elements.portraitScale.value) / 100,
+        portraitOpacity: Number(elements.portraitOpacity.value) / 100,
+        portraitSrc: getCurrentPortraitSrc(),
+        backgroundSrc: getCurrentBackgroundSrc(),
+        theme: elements.visualTheme.value
+      };
+    }
+
+    function applyCardTheme(ctx, mode, x, y, w, h) {
+      const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+      if (mode === 'beastman') {
+        grad.addColorStop(0, '#111827');
+        grad.addColorStop(0.4, '#0b1222');
+        grad.addColorStop(1, '#07101c');
+      } else {
+        grad.addColorStop(0, '#f3f4f6');
+        grad.addColorStop(0.5, '#e5e7eb');
+        grad.addColorStop(1, '#d1d5db');
+      }
+      fillRoundRect(ctx, x, y, w, h, 26, grad);
+      strokeRoundRect(ctx, x, y, w, h, 26, mode === 'beastman' ? 'rgba(212,177,106,.35)' : 'rgba(148,163,184,.44)', 2);
+    }
+
+    function drawDefaultPortraitBg(ctx, x, y, w, h, mode) {
+      const bg = ctx.createLinearGradient(x, y, x, y + h);
+      if (mode === 'beastman') {
+        bg.addColorStop(0, '#273449');
+        bg.addColorStop(0.45, '#172233');
+        bg.addColorStop(1, '#0d1623');
+      } else {
+        bg.addColorStop(0, '#f1f5f9');
+        bg.addColorStop(0.5, '#d9dee6');
+        bg.addColorStop(1, '#bcc4d0');
+      }
+      fillRoundRect(ctx, x, y, w, h, 14, bg);
+      drawGridPattern(ctx, x, y, w, h, 20, mode === 'beastman' ? 0.07 : 0.05);
+      const vignette = ctx.createLinearGradient(x, y, x, y + h);
+      vignette.addColorStop(0, 'rgba(255,255,255,.08)');
+      vignette.addColorStop(0.62, 'rgba(0,0,0,.0)');
+      vignette.addColorStop(1, 'rgba(0,0,0,.26)');
+      ctx.save();
+      roundRectPath(ctx, x, y, w, h, 14);
+      ctx.clip();
+      ctx.fillStyle = vignette;
+      ctx.fillRect(x, y, w, h);
+      ctx.restore();
+    }
+
+    function drawPlaceholderPortrait(ctx, x, y, w, h, mode) {
+      ctx.save();
+      roundRectPath(ctx, x, y, w, h, 14);
+      ctx.clip();
+      const cx = x + w / 2;
+      const headY = y + h * 0.25;
+      const headR = Math.min(w, h) * 0.13;
+      const bodyW = w * 0.46;
+      const bodyH = h * 0.4;
+      ctx.fillStyle = mode === 'beastman' ? 'rgba(255,255,255,.32)' : 'rgba(55,65,81,.18)';
+      ctx.beginPath();
+      ctx.arc(cx, headY, headR, 0, Math.PI * 2);
+      ctx.fill();
+      fillRoundRect(ctx, cx - bodyW / 2, y + h * 0.42, bodyW, bodyH, 24, ctx.fillStyle);
+      ctx.restore();
+    }
+
+    function drawBarcode(ctx, x, y, w, h, code) {
+      fillRoundRect(ctx, x, y, w, h, 12, 'rgba(255,255,255,.92)');
+      strokeRoundRect(ctx, x, y, w, h, 12, 'rgba(20,20,20,.12)', 1);
+      ctx.save();
+      const bars = String(code || 'AX77204911').replace(/\s+/g, '');
+      let cursor = x + 12;
+      const top = y + 8;
+      const bottom = y + h - 18;
+      for (let i = 0; i < bars.length * 3; i++) {
+        const width = [2, 1, 3, 2][i % 4];
+        if (i % 2 === 0) {
+          ctx.fillStyle = '#111827';
+          ctx.fillRect(cursor, top, width, bottom - top);
+        }
+        cursor += width + 2;
+        if (cursor > x + w - 12) break;
+      }
+      drawText(ctx, code, x + w / 2, y + h - 6, {
+        font: '800 10px Inter, sans-serif', color: '#111827', align: 'center', baseline: 'bottom', letterSpacing: 2.2
+      });
+      ctx.restore();
+    }
+
+    function drawQrPlaceholder(ctx, x, y, size) {
+      fillRoundRect(ctx, x, y, size, size, 12, '#f8fafc');
+      strokeRoundRect(ctx, x, y, size, size, 12, 'rgba(17,24,39,.15)', 1);
+      ctx.save();
+      ctx.fillStyle = '#111';
+      const cell = size / 7;
+      const pattern = [
+        [1,1,1,0,1,0,1],
+        [1,0,1,0,1,1,0],
+        [1,1,1,0,0,1,1],
+        [0,0,1,1,0,1,0],
+        [1,1,0,0,1,1,1],
+        [0,1,1,0,1,0,1],
+        [1,0,1,1,1,0,1],
+      ];
+      pattern.forEach((row, ry) => row.forEach((v, rx) => { if (v) ctx.fillRect(x + rx * cell, y + ry * cell, cell - 1, cell - 1); }));
+      ctx.restore();
+    }
+
+    async function exportCardToPngFromCanvas(filename) {
+      const state = getExportState();
+      const scale = 2;
+      const width = 920;
+      const height = Math.max(580, Math.ceil(exportCard.offsetHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // background
+      const pageBg = ctx.createLinearGradient(0, 0, width, height);
+      pageBg.addColorStop(0, '#060912');
+      pageBg.addColorStop(0.6, '#03050b');
+      pageBg.addColorStop(1, '#020308');
+      ctx.fillStyle = pageBg;
+      ctx.fillRect(0, 0, width, height);
+
+      const cardX = 0;
+      const cardY = 0;
+      const cardW = width;
+      const cardH = height;
+      applyCardTheme(ctx, state.mode, cardX, cardY, cardW, cardH);
+
+      // decorative glows
+      ctx.save();
+      ctx.globalAlpha = state.mode === 'beastman' ? 0.22 : 0.08;
+      const glow1 = ctx.createRadialGradient(150, 90, 0, 150, 90, 240);
+      glow1.addColorStop(0, state.mode === 'beastman' ? '#d4b16a' : '#fb923c');
+      glow1.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow1;
+      ctx.fillRect(0, 0, cardW, cardH);
+      const glow2 = ctx.createRadialGradient(cardW - 130, cardH - 100, 0, cardW - 130, cardH - 100, 220);
+      glow2.addColorStop(0, state.mode === 'beastman' ? '#0891b2' : '#ef4444');
+      glow2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow2;
+      ctx.fillRect(0, 0, cardW, cardH);
+      ctx.restore();
+      drawGridPattern(ctx, 0, 0, cardW, cardH, 22, 0.03);
+
+      const pad = 18;
+      const topH = 92;
+      const mainY = pad + topH + 14;
+      const bottomH = 98;
+      const mainH = cardH - mainY - bottomH - pad;
+      const leftW = 344;
+      const rightX = pad + leftW + 14;
+      const rightW = cardW - rightX - pad;
+
+      // top texts
+      fillRoundRect(ctx, pad, pad, 170, 28, 999, state.mode === 'beastman' ? 'rgba(255,255,255,.05)' : 'rgba(255,255,255,.35)');
+      strokeRoundRect(ctx, pad, pad, 170, 28, 999, state.mode === 'beastman' ? 'rgba(212,177,106,.24)' : 'rgba(22,24,29,.10)', 1);
+      drawText(ctx, state.cardKicker, pad + 85, pad + 18, {
+        font: `900 10px ${getComputedStyle(document.body).fontFamily}`,
+        color: state.mode === 'beastman' ? 'rgba(226,232,240,.78)' : 'rgba(22,24,29,.64)', align: 'center', baseline: 'middle', letterSpacing: 1.6
+      });
+      drawText(ctx, state.cardTitle, pad, pad + 54, {
+        font: `900 30px ${getComputedStyle(document.body).fontFamily}`,
+        color: state.mode === 'beastman' ? '#f9fafb' : '#16181d', baseline: 'alphabetic'
+      });
+      drawText(ctx, state.cardSubtitle, pad, pad + 76, {
+        font: `500 12px ${getComputedStyle(document.body).fontFamily}`,
+        color: state.mode === 'beastman' ? 'rgba(226,232,240,.72)' : 'rgba(22,24,29,.62)'
+      });
+      fillRoundRect(ctx, cardW - pad - 170, pad + 4, 170, 34, 999, state.mode === 'beastman' ? '#b88e4c' : '#dc2626');
+      drawText(ctx, state.modeChip, cardW - pad - 85, pad + 25, {
+        font: `900 11px ${getComputedStyle(document.body).fontFamily}`,
+        color: state.mode === 'beastman' ? '#1d1405' : '#fff7ed', align: 'center', baseline: 'middle', letterSpacing: 1.4
+      });
+
+      // watermark
+      ctx.save();
+      ctx.globalAlpha = state.mode === 'beastman' ? 0.12 : 0.10;
+      ctx.translate(cardW - 120, state.mode === 'beastman' ? 155 : cardH - 135);
+      ctx.rotate((state.mode === 'beastman' ? -8 : -12) * Math.PI / 180);
+      ctx.strokeStyle = state.mode === 'beastman' ? 'rgba(255,255,255,.26)' : 'rgba(239,68,68,.24)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(0, 0, state.mode === 'beastman' ? 66 : 80, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 0, state.mode === 'beastman' ? 52 : 64, 0, Math.PI * 2);
+      ctx.stroke();
+      drawText(ctx, state.watermark, 0, 5, {
+        font: `900 ${state.mode === 'beastman' ? 14 : 18}px ${getComputedStyle(document.body).fontFamily}`,
+        color: state.mode === 'beastman' ? 'rgba(255,255,255,.45)' : 'rgba(239,68,68,.45)', align: 'center', baseline: 'middle', letterSpacing: 2
+      });
+      ctx.restore();
+
+      // panels
+      fillRoundRect(ctx, pad, mainY, leftW, mainH, 18, state.mode === 'beastman' ? 'rgba(255,255,255,.045)' : 'rgba(255,255,255,.40)');
+      strokeRoundRect(ctx, pad, mainY, leftW, mainH, 18, state.mode === 'beastman' ? 'rgba(212,177,106,.26)' : 'rgba(22,24,29,.12)', 1);
+      fillRoundRect(ctx, rightX, mainY, rightW, mainH, 18, state.mode === 'beastman' ? 'rgba(255,255,255,.045)' : 'rgba(255,255,255,.40)');
+      strokeRoundRect(ctx, rightX, mainY, rightW, mainH, 18, state.mode === 'beastman' ? 'rgba(212,177,106,.26)' : 'rgba(22,24,29,.12)', 1);
+
+      // portrait box
+      const pX = pad + 10;
+      const pY = mainY + 10;
+      const pW = leftW - 20;
+      const pH = mainH - 20;
+      drawDefaultPortraitBg(ctx, pX, pY, pW, pH, state.mode);
+      strokeRoundRect(ctx, pX, pY, pW, pH, 14, state.mode === 'beastman' ? 'rgba(212,177,106,.22)' : 'rgba(22,24,29,.10)', 1);
+
+      // portrait draw
+      try {
+        const [bgImg, portrait] = await Promise.all([
+          loadImageSafe(state.backgroundSrc).catch(() => null),
+          loadImageSafe(state.portraitSrc).catch(() => null)
+        ]);
+        ctx.save();
+        roundRectPath(ctx, pX, pY, pW, pH, 14);
+        ctx.clip();
+        if (bgImg) {
+          const bgRatio = Math.max(pW / bgImg.width, pH / bgImg.height);
+          const bgDrawW = bgImg.width * bgRatio;
+          const bgDrawH = bgImg.height * bgRatio;
+          ctx.drawImage(bgImg, pX + (pW - bgDrawW) / 2, pY + (pH - bgDrawH) / 2, bgDrawW, bgDrawH);
+        }
+        drawGridPattern(ctx, pX, pY, pW, pH, 20, state.mode === 'beastman' ? 0.06 : 0.04);
+        if (portrait) {
+          const baseW = pW * 0.92 * state.portraitScale;
+          const ratio = portrait.height / portrait.width;
+          const drawW = baseW;
+          const drawH = drawW * ratio;
+          const px = pX + pW / 2 - drawW / 2 + state.portraitX;
+          const py = pY + pH - drawH + state.portraitY;
+          ctx.globalAlpha = state.portraitOpacity;
+          ctx.drawImage(portrait, px, py, drawW, drawH);
+          ctx.globalAlpha = 1;
+        } else {
+          drawPlaceholderPortrait(ctx, pX, pY, pW, pH, state.mode);
+        }
+        const vignette = ctx.createLinearGradient(pX, pY, pX, pY + pH);
+        vignette.addColorStop(0, 'rgba(255,255,255,.08)');
+        vignette.addColorStop(0.6, 'rgba(0,0,0,0)');
+        vignette.addColorStop(1, 'rgba(0,0,0,.22)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(pX, pY, pW, pH);
+        ctx.restore();
+      } catch (err) {
+        console.warn(err);
+      }
+
+      // info blocks
+      let yCursor = mainY + 14;
+      const infoInset = 14;
+      const innerRightX = rightX + infoInset;
+      const innerRightW = rightW - infoInset * 2;
+      const textColor = state.mode === 'beastman' ? '#f9fafb' : '#16181d';
+      const mutedColor = state.mode === 'beastman' ? 'rgba(226,232,240,.72)' : 'rgba(22,24,29,.62)';
+      const labelColor = state.mode === 'beastman' ? 'rgba(226,232,240,.72)' : 'rgba(22,24,29,.62)';
+      const cellFill = state.mode === 'beastman' ? 'rgba(255,255,255,.05)' : 'rgba(255,255,255,.65)';
+      const cellStroke = state.mode === 'beastman' ? 'rgba(212,177,106,.18)' : 'rgba(22,24,29,.10)';
+
+      // identity strip
+      fillRoundRect(ctx, innerRightX, yCursor, innerRightW, 58, 14, cellFill);
+      strokeRoundRect(ctx, innerRightX, yCursor, innerRightW, 58, 14, cellStroke, 1);
+      const nameMaxWidth = innerRightW - 170;
+      const nameSize = fitText(ctx, state.primaryName, nameMaxWidth, 30, getComputedStyle(document.body).fontFamily, '950');
+      drawText(ctx, state.primaryName, innerRightX + 14, yCursor + 24, {
+        font: `950 ${nameSize}px ${getComputedStyle(document.body).fontFamily}`, color: textColor, baseline: 'middle'
+      });
+      if (state.age) {
+        drawText(ctx, state.age, innerRightX + innerRightW - 120, yCursor + 24, {
+          font: `900 17px ${getComputedStyle(document.body).fontFamily}`, color: mutedColor, baseline: 'middle'
+        });
+      }
+      const tagW = 110;
+      fillRoundRect(ctx, innerRightX + innerRightW - tagW - 12, yCursor + 12, tagW, 22, 999, state.mode === 'beastman' ? 'rgba(255,255,255,.06)' : 'rgba(255,255,255,.78)');
+      strokeRoundRect(ctx, innerRightX + innerRightW - tagW - 12, yCursor + 12, tagW, 22, 999, cellStroke, 1);
+      drawText(ctx, state.identityTag, innerRightX + innerRightW - tagW / 2 - 12, yCursor + 23, {
+        font: `900 10px ${getComputedStyle(document.body).fontFamily}`, color: mutedColor, align: 'center', baseline: 'middle', letterSpacing: 1.4
+      });
+      yCursor += 70;
+
+      if (state.ownerVisible && state.ownerName) {
+        fillRoundRect(ctx, innerRightX, yCursor, innerRightW, 48, 14, cellFill);
+        strokeRoundRect(ctx, innerRightX, yCursor, innerRightW, 48, 14, cellStroke, 1);
+        drawText(ctx, 'Owner', innerRightX + 12, yCursor + 15, {
+          font: `900 9px ${getComputedStyle(document.body).fontFamily}`, color: labelColor, baseline: 'middle', letterSpacing: 1.3
+        });
+        drawText(ctx, state.ownerName, innerRightX + 12, yCursor + 33, {
+          font: `850 17px ${getComputedStyle(document.body).fontFamily}`, color: textColor, baseline: 'middle'
+        });
+        yCursor += 60;
+      }
+
+      // description strip
+      ctx.font = `850 16px ${getComputedStyle(document.body).fontFamily}`;
+      const descLines = wrapTextLines(ctx, state.description, innerRightW - 24);
+      const descH = Math.max(56, 24 + descLines.length * 20);
+      fillRoundRect(ctx, innerRightX, yCursor, innerRightW, descH, 14, cellFill);
+      strokeRoundRect(ctx, innerRightX, yCursor, innerRightW, descH, 14, cellStroke, 1);
+      drawText(ctx, 'Description', innerRightX + 12, yCursor + 15, {
+        font: `900 9px ${getComputedStyle(document.body).fontFamily}`, color: labelColor, baseline: 'middle', letterSpacing: 1.3
+      });
+      descLines.forEach((line, i) => {
+        drawText(ctx, line, innerRightX + 12, yCursor + 34 + i * 20, {
+          font: `850 16px ${getComputedStyle(document.body).fontFamily}`, color: textColor, baseline: 'middle'
+        });
+      });
+      yCursor += descH + 12;
+
+      // two info cells
+      const cellW = (innerRightW - 10) / 2;
+      [[''+state.field1Label, ''+state.field1Value], [''+state.field4Label, ''+state.field4Value]].forEach((pair, idx) => {
+        const cx = innerRightX + idx * (cellW + 10);
+        fillRoundRect(ctx, cx, yCursor, cellW, 58, 14, cellFill);
+        strokeRoundRect(ctx, cx, yCursor, cellW, 58, 14, cellStroke, 1);
+        drawText(ctx, pair[0], cx + 12, yCursor + 16, {
+          font: `900 9px ${getComputedStyle(document.body).fontFamily}`, color: labelColor, baseline: 'middle', letterSpacing: 1.3
+        });
+        const valueSize = fitText(ctx, pair[1], cellW - 24, 16, getComputedStyle(document.body).fontFamily, '850');
+        drawText(ctx, pair[1], cx + 12, yCursor + 38, {
+          font: `850 ${valueSize}px ${getComputedStyle(document.body).fontFamily}`, color: textColor, baseline: 'middle'
+        });
+      });
+
+      // bottom section
+      const bottomY = cardH - pad - 84;
+      const warningW = 520;
+      fillRoundRect(ctx, pad, bottomY, warningW, 26, 10, state.mode === 'beastman' ? 'rgba(3,7,18,.76)' : '#fff7ed');
+      strokeRoundRect(ctx, pad, bottomY, warningW, 26, 10, state.mode === 'beastman' ? 'rgba(239,220,176,.14)' : 'rgba(154,52,18,.16)', 1);
+      drawText(ctx, state.warning, pad + 10, bottomY + 17, {
+        font: `900 10px ${getComputedStyle(document.body).fontFamily}`, color: state.mode === 'beastman' ? '#efdcb0' : '#9a3412', baseline: 'middle', letterSpacing: 1.2
+      });
+      drawBarcode(ctx, pad, bottomY + 34, 520, 50, state.barcodeCode);
+      drawQrPlaceholder(ctx, cardW - pad - 224, bottomY + 10, 74);
+      fillRoundRect(ctx, cardW - pad - 138, bottomY + 10, 138, 74, 12, cellFill);
+      strokeRoundRect(ctx, cardW - pad - 138, bottomY + 10, 138, 74, 12, cellStroke, 1);
+      drawText(ctx, state.sigLabel, cardW - pad - 126, bottomY + 24, {
+        font: `900 9px ${getComputedStyle(document.body).fontFamily}`, color: labelColor, baseline: 'middle', letterSpacing: 1.2
+      });
+      const sigSize = fitText(ctx, state.sigValue, 114, 14, getComputedStyle(document.body).fontFamily, '800');
+      drawText(ctx, state.sigValue, cardW - pad - 126, bottomY + 49, {
+        font: `800 ${sigSize}px ${getComputedStyle(document.body).fontFamily}`, color: textColor, baseline: 'middle'
+      });
+
+      drawText(ctx, state.microLine, pad, cardH - 12, {
+        font: `700 9px ${getComputedStyle(document.body).fontFamily}`, color: mutedColor, baseline: 'bottom', maxWidth: cardW - pad * 2, letterSpacing: 1.1
+      });
+
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((result) => result ? resolve(result) : reject(new Error('PNG 변환 실패')), 'image/png');
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1200);
+    }
+
     $('saveBtn').addEventListener('click', async () => {
       try {
         setStatus('PNG 저장 중...');
-        const canvas = await html2canvas(exportCard, {
-          backgroundColor: null,
-          scale: 2,
-          useCORS: true,
-          logging: false
-        });
-        const link = document.createElement('a');
-        link.download = `registry-card-${elements.mode.value}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        await exportCardToPngFromCanvas(`registry-card-${elements.mode.value}.png`);
         setStatus('PNG 저장 완료');
       } catch (err) {
         console.error(err);
+        alert('PNG 저장 중 문제가 발생했어. 외부 배경 URL을 썼다면 업로드 방식으로 바꿔서 다시 시도해줘.\n\n' + (err?.message || err));
         setStatus('저장 중 오류가 발생했어');
       }
     });
