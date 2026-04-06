@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dystopian Registry Card Maker</title>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     :root {
       --bg: #05070d;
@@ -15,6 +14,8 @@
       --accent: #d4b16a;
       --shadow: 0 24px 60px rgba(0,0,0,.4);
       --font: Inter, ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      --sticky-top: 18px;
+      --panel-height: calc(100vh - 36px);
     }
 
     * { box-sizing: border-box; }
@@ -87,7 +88,7 @@
       display: grid;
       grid-template-columns: minmax(320px, 410px) minmax(380px, 1fr);
       gap: 22px;
-      align-items: start;
+      align-items: stretch;
     }
 
     .panel {
@@ -101,7 +102,13 @@
     .controls {
       padding: 18px;
       position: sticky;
-      top: 18px;
+      top: var(--sticky-top);
+      min-height: var(--panel-height);
+      max-height: var(--panel-height);
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
     }
 
     .panel-title {
@@ -285,6 +292,13 @@
 
     .preview-panel {
       padding: 18px;
+      position: sticky;
+      top: var(--sticky-top);
+      min-height: var(--panel-height);
+      max-height: var(--panel-height);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     .preview-head {
@@ -303,6 +317,8 @@
     }
 
     .preview-wrap {
+      flex: 1 1 auto;
+      min-height: 0;
       padding: 28px;
       border-radius: 28px;
       border: 1px solid rgba(255,255,255,.06);
@@ -310,12 +326,44 @@
         radial-gradient(circle at top, rgba(56,189,248,.08), transparent 26%),
         radial-gradient(circle at bottom, rgba(249,115,22,.07), transparent 24%),
         linear-gradient(180deg, rgba(15, 23, 42, .56), rgba(2, 6, 23, .92));
-      overflow: hidden;
+      overflow: auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      scrollbar-gutter: stable both-edges;
+    }
+
+
+    .controls::-webkit-scrollbar,
+    .preview-wrap::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .controls::-webkit-scrollbar-track,
+    .preview-wrap::-webkit-scrollbar-track {
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+    }
+
+    .controls::-webkit-scrollbar-thumb,
+    .preview-wrap::-webkit-scrollbar-thumb {
+      background: rgba(148,163,184,.42);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+
+    .controls::-webkit-scrollbar-thumb:hover,
+    .preview-wrap::-webkit-scrollbar-thumb:hover {
+      background: rgba(125,211,252,.55);
+      background-clip: padding-box;
     }
 
     .preview-stage {
       position: relative;
       width: 100%;
+      min-height: 620px;
     }
 
     .card-shell {
@@ -710,7 +758,6 @@
       white-space: nowrap;
     }
 
-    .owner-strip,
     .description-strip {
       padding: 11px 12px;
       border-radius: 14px;
@@ -719,32 +766,16 @@
       min-width: 0;
     }
 
-    .owner-strip[hidden] {
-      display: none !important;
-    }
-
-    .id-card.human .owner-strip,
     .id-card.human .description-strip {
       background: rgba(255,255,255,.62);
     }
 
-    .owner-label,
     .description-label {
       font-size: 9px;
       letter-spacing: .12em;
       text-transform: uppercase;
       font-weight: 900;
       color: var(--card-muted);
-    }
-
-    .owner-text {
-      margin-top: 6px;
-      font-size: 16px;
-      font-weight: 850;
-      line-height: 1.32;
-      color: var(--text);
-      white-space: normal;
-      overflow-wrap: anywhere;
     }
 
     .description-text {
@@ -1047,8 +1078,28 @@
     }
 
     @media (max-width: 1080px) {
+      :root {
+        --panel-height: auto;
+      }
+
       .layout { grid-template-columns: 1fr; }
-      .controls { position: static; }
+      .controls, .preview-panel {
+        position: static;
+        min-height: 0;
+        max-height: none;
+      }
+
+      .controls {
+        overflow: visible;
+      }
+
+      .preview-panel {
+        overflow: visible;
+      }
+
+      .preview-wrap {
+        overflow: auto;
+      }
     }
 
     @media (max-width: 820px) {
@@ -1114,10 +1165,6 @@
               <label for="age" id="labelAge">나이</label>
               <input id="age" type="text" inputmode="numeric" maxlength="8" placeholder="28" />
             </div>
-          </div>
-          <div class="field" id="ownerControlField" hidden>
-            <label for="ownerName" id="labelOwnerName">주인님 이름</label>
-            <input id="ownerName" type="text" maxlength="32" />
           </div>
           <div class="field">
             <label for="secondaryLine" id="labelSecondaryLine">설명 / 상태</label>
@@ -1241,11 +1288,6 @@
                       <div class="identity-tag" id="identityTag">Citizen</div>
                     </div>
 
-                    <div class="owner-strip" id="ownerStrip" hidden>
-                      <div class="owner-label" id="ownerLabel">Owner Name</div>
-                      <div class="owner-text" id="ownerText">Lady Seraphine Vale</div>
-                    </div>
-
                     <div class="description-strip">
                       <div class="description-label" id="descriptionLabel">Description</div>
                       <div class="description-text" id="descriptionText">Predator lineage registry / urban high district resident</div>
@@ -1287,9 +1329,6 @@
         controlLabels: [
           '종족 라인', '소속 / 기관'
         ],
-        ownerControlLabel: '주인님 이름',
-        ownerLabel: 'Owner Name',
-        ownerPlaceholder: '',
         descriptionControlLabel: '설명 / 상태',
         descriptionLabel: 'Description',
         previewLabels: [
@@ -1308,15 +1347,12 @@
       },
       human: {
         controlLabels: [
-          '처리 타입', '등록 시설'
+          '처리 타입', '소유 주체'
         ],
-        ownerControlLabel: '주인님 이름',
-        ownerLabel: 'Owner Name',
-        ownerPlaceholder: 'Lady Seraphine Vale',
         descriptionControlLabel: '설명 / 상태',
         descriptionLabel: 'Description',
         previewLabels: [
-          'Processing Type', 'Registry Site'
+          'Processing Type', 'Owner'
         ],
         cardKicker: 'Human Asset Registration',
         cardTitle: 'HUMAN ASSET REGISTRATION',
@@ -1337,7 +1373,6 @@
         visualTheme: 'default',
         primaryName: 'RHEA VOSS',
         age: '28',
-        ownerName: '',
         secondaryLine: 'Predator lineage registry / urban high district resident',
         field1: 'Canis Lupus / Predator',
         field4: 'AVATTOIR Board Auxiliary',
@@ -1351,7 +1386,6 @@
         visualTheme: 'cold',
         primaryName: 'KAIN MERCER',
         age: '34',
-        ownerName: '',
         secondaryLine: 'Instinct Control tactical branch / pacify protocol carrier',
         field1: 'Panthera Tigris / Predator',
         field4: 'Instinct Control',
@@ -1365,7 +1399,6 @@
         visualTheme: 'warm',
         primaryName: 'Asset H-02814',
         age: '19',
-        ownerName: 'Lady Seraphine Vale',
         secondaryLine: 'Companion / display stock · luxury custody circulation',
         field1: 'Companion Retrofit',
         field4: 'Eden Boutique',
@@ -1379,7 +1412,6 @@
         visualTheme: 'cold',
         primaryName: 'Asset H-77102',
         age: '23',
-        ownerName: 'Supervisor M. Crowe',
         secondaryLine: 'Industrial / expendable logistics stock · route-certified',
         field1: 'Labor Conditioning',
         field4: 'Homo-Gen Industries',
@@ -1391,7 +1423,7 @@
     };
 
     const ids = [
-      'mode','visualTheme','primaryName','age','ownerName','secondaryLine','field1','field4',
+      'mode','visualTheme','primaryName','age','secondaryLine','field1','field4',
       'bgUrl','portraitX','portraitY','portraitScale','portraitOpacity'
     ];
 
@@ -1467,16 +1499,9 @@
       exportCard.classList.toggle('beastman', mode === 'beastman');
       exportCard.classList.toggle('human', mode === 'human');
 
-      const isHuman = mode === 'human';
-
       $('labelPrimaryName').textContent = mode === 'beastman' ? '이름' : '자산명';
       $('labelAge').textContent = '나이';
-      $('labelOwnerName').textContent = config.ownerControlLabel;
       $('labelSecondaryLine').textContent = mode === 'beastman' ? '등록 설명' : '자산 설명';
-      $('ownerName').placeholder = config.ownerPlaceholder || '';
-      $('ownerControlField').hidden = !isHuman;
-      $('ownerStrip').hidden = !isHuman;
-      $('ownerLabel').textContent = config.ownerLabel;
 
       $('label1').textContent = config.controlLabels[0];
       $('label4').textContent = config.controlLabels[1];
@@ -1504,7 +1529,6 @@
       $('identityAge').style.display = ageValue ? 'block' : 'none';
       $('descriptionLabel').textContent = modeConfig.descriptionLabel;
       $('descriptionText').textContent = elements.secondaryLine.value || modeConfig.cardSubtitle;
-      $('ownerText').textContent = elements.ownerName.value || '—';
       $('identityTag').textContent = elements.mode.value === 'beastman' ? 'Citizen' : 'Property';
 
       $('fieldValue1').textContent = elements.field1.value || '—';
@@ -1528,7 +1552,7 @@
       if (bg) {
         portraitBox.style.backgroundImage = `linear-gradient(180deg, rgba(15,23,42,.22), rgba(15,23,42,.5)), url(${bg})`;
       } else {
-        portraitBox.style.backgroundImage = `linear-gradient(180deg, rgba(15,23,42,.22), rgba(15,23,42,.5)), url('https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=80')`;
+        portraitBox.style.backgroundImage = `linear-gradient(180deg, rgba(15,23,42,.22), rgba(15,23,42,.5)), url('$data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%271200%27%20height%3D%27900%27%20viewBox%3D%270%200%201200%20900%27%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%2325324a%27/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2750%25%27%20stop-color%3D%27%230f172a%27/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%2305070d%27/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%27r1%27%20cx%3D%2720%25%27%20cy%3D%2715%25%27%20r%3D%2745%25%27%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27rgba%28212%2C177%2C106%2C0.35%29%27/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27rgba%28212%2C177%2C106%2C0%29%27/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%27r2%27%20cx%3D%2785%25%27%20cy%3D%2778%25%27%20r%3D%2738%25%27%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27rgba%2856%2C189%2C248%2C0.25%29%27/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27rgba%2856%2C189%2C248%2C0%29%27/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Crect%20width%3D%271200%27%20height%3D%27900%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%3Crect%20width%3D%271200%27%20height%3D%27900%27%20fill%3D%27url%28%23r1%29%27/%3E%0A%20%20%3Crect%20width%3D%271200%27%20height%3D%27900%27%20fill%3D%27url%28%23r2%29%27/%3E%0A%20%20%3Cg%20stroke%3D%27rgba%28255%2C255%2C255%2C0.06%29%27%20stroke-width%3D%271%27%3E%0A%20%20%20%20%3Cpath%20d%3D%27M0%20120H1200%27/%3E%3Cpath%20d%3D%27M0%20260H1200%27/%3E%3Cpath%20d%3D%27M0%20400H1200%27/%3E%3Cpath%20d%3D%27M0%20540H1200%27/%3E%3Cpath%20d%3D%27M0%20680H1200%27/%3E%3Cpath%20d%3D%27M0%20820H1200%27/%3E%0A%20%20%20%20%3Cpath%20d%3D%27M140%200V900%27/%3E%3Cpath%20d%3D%27M340%200V900%27/%3E%3Cpath%20d%3D%27M540%200V900%27/%3E%3Cpath%20d%3D%27M740%200V900%27/%3E%3Cpath%20d%3D%27M940%200V900%27/%3E%3Cpath%20d%3D%27M1140%200V900%27/%3E%0A%20%20%3C/g%3E%0A%3C/svg%3E')`;
       }
 
       if (uploadedPortraitUrl) {
@@ -1631,22 +1655,143 @@
       setStatus('전체 초기화 완료');
     });
 
+    async function waitForElementImages(root) {
+      const images = Array.from(root.querySelectorAll('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(resolve => {
+          const done = () => resolve();
+          img.addEventListener('load', done, { once: true });
+          img.addEventListener('error', done, { once: true });
+        });
+      }));
+    }
+
+    async function urlToDataURL(url) {
+      if (!url || url.startsWith('data:')) return url;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (err) {
+        console.warn('이미지 인라인 변환 실패:', url, err);
+        return null;
+      }
+    }
+
+    async function inlineCloneAssets(clone) {
+      const imgs = Array.from(clone.querySelectorAll('img'));
+      for (const img of imgs) {
+        const src = img.getAttribute('src') || '';
+        if (!src || src.startsWith('data:')) continue;
+        const dataUrl = await urlToDataURL(src);
+        if (dataUrl) img.setAttribute('src', dataUrl);
+      }
+
+      const styledNodes = [clone, ...clone.querySelectorAll('[style]')];
+      const bgUrlRegex = /url\((['\"]?)(.*?)\1\)/g;
+      for (const node of styledNodes) {
+        const styleAttr = node.getAttribute('style');
+        if (!styleAttr || !styleAttr.includes('url(')) continue;
+        const matches = Array.from(styleAttr.matchAll(bgUrlRegex));
+        if (!matches.length) continue;
+        let nextStyle = styleAttr;
+        for (const match of matches) {
+          const originalUrl = match[2];
+          const dataUrl = await urlToDataURL(originalUrl);
+          const replacement = dataUrl ? `url("${dataUrl}")` : 'none';
+          nextStyle = nextStyle.replace(match[0], replacement);
+        }
+        node.setAttribute('style', nextStyle);
+      }
+    }
+
+    function collectDocumentStyles() {
+      return Array.from(document.querySelectorAll('style'))
+        .map(style => style.textContent || '')
+        .join('\n');
+    }
+
+    async function exportNodeToPng(node, filename) {
+      await waitForElementImages(node);
+
+      const width = Math.ceil(node.offsetWidth);
+      const height = Math.ceil(node.offsetHeight);
+      const clone = node.cloneNode(true);
+      clone.style.margin = '0';
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      clone.style.transform = 'none';
+      clone.style.filter = node.style.filter || '';
+      clone.style.boxShadow = getComputedStyle(node).boxShadow;
+
+      await inlineCloneAssets(clone);
+
+      const styles = collectDocumentStyles();
+      const wrapped = `
+        <div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;overflow:hidden;">
+          <style>${styles}</style>
+          ${clone.outerHTML}
+        </div>`;
+
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+          <foreignObject width="100%" height="100%">${wrapped}</foreignObject>
+        </svg>`;
+
+      const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+
+      try {
+        const img = await new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = () => reject(new Error('SVG 렌더링 실패'));
+          image.src = svgUrl;
+        });
+
+        const scale = 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob((result) => {
+            if (result) resolve(result);
+            else reject(new Error('PNG 변환 실패'));
+          }, 'image/png');
+        });
+
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 1500);
+      } finally {
+        URL.revokeObjectURL(svgUrl);
+      }
+    }
+
     $('saveBtn').addEventListener('click', async () => {
       try {
         setStatus('PNG 저장 중...');
-        const canvas = await html2canvas(exportCard, {
-          backgroundColor: null,
-          scale: 2,
-          useCORS: true,
-          logging: false
-        });
-        const link = document.createElement('a');
-        link.download = `registry-card-${elements.mode.value}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        await exportNodeToPng(exportCard, `registry-card-${elements.mode.value}.png`);
         setStatus('PNG 저장 완료');
       } catch (err) {
         console.error(err);
+        alert('PNG 저장 중 문제가 발생했어. 외부 이미지 URL을 썼다면 업로드 방식으로 바꿔서 다시 시도해줘.\n\n' + (err?.message || err));
         setStatus('저장 중 오류가 발생했어');
       }
     });
