@@ -1096,10 +1096,10 @@
             </div>
           </div>
           <div class="chips">
-            <button class="chip active" data-preset="beastman_citizen">Beastman Citizen</button>
-            <button class="chip" data-preset="beastman_security">Beastman Security</button>
-            <button class="chip" data-preset="human_pet">Human Pet Asset</button>
-            <button class="chip" data-preset="human_industrial">Human Industrial</button>
+            <button type="button" class="chip active" data-preset="beastman_citizen">Beastman Citizen</button>
+            <button type="button" class="chip" data-preset="beastman_security">Beastman Security</button>
+            <button type="button" class="chip" data-preset="human_pet">Human Pet Asset</button>
+            <button type="button" class="chip" data-preset="human_industrial">Human Industrial</button>
           </div>
         </div>
 
@@ -1186,9 +1186,9 @@
         </div>
 
         <div class="button-row">
-          <button class="btn primary" id="saveBtn">PNG 저장</button>
-          <button class="btn secondary" id="resetPortraitBtn">포트레이트 초기화</button>
-          <button class="btn ghost" id="resetAllBtn">전체 초기화</button>
+          <button type="button" class="btn primary" id="saveBtn">PNG 저장</button>
+          <button type="button" class="btn secondary" id="resetPortraitBtn">포트레이트 초기화</button>
+          <button type="button" class="btn ghost" id="resetAllBtn">전체 초기화</button>
         </div>
         <div class="status" id="status"></div>
       </aside>
@@ -1615,7 +1615,7 @@
     $('resetPortraitBtn').addEventListener('click', () => {
       elements.portraitX.value = 0;
       elements.portraitY.value = 0;
-      elements.portraitScale.value = 86;
+      elements.portraitScale.value = 108;
       elements.portraitOpacity.value = 100;
       renderCard();
       setStatus('포트레이트 위치 초기화');
@@ -1631,19 +1631,76 @@
       setStatus('전체 초기화 완료');
     });
 
+    async function waitForImages(container) {
+      const imgs = Array.from(container.querySelectorAll('img')).filter(img => img.src);
+      await Promise.all(imgs.map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(resolve => {
+          const done = () => { img.removeEventListener('load', done); img.removeEventListener('error', done); resolve(); };
+          img.addEventListener('load', done, { once: true });
+          img.addEventListener('error', done, { once: true });
+        });
+      }));
+    }
+
+    async function exportCardAsPng() {
+      if (typeof html2canvas !== 'function') {
+        throw new Error('html2canvas not loaded');
+      }
+
+      await waitForImages(exportCard);
+      if (document.fonts && document.fonts.ready) {
+        try { await document.fonts.ready; } catch (e) {}
+      }
+
+      const canvas = await html2canvas(exportCard, {
+        backgroundColor: null,
+        scale: Math.max(2, window.devicePixelRatio || 1),
+        useCORS: true,
+        logging: false,
+        allowTaint: false
+      });
+
+      const filename = `registry-card-${elements.mode.value}.png`;
+
+      await new Promise((resolve, reject) => {
+        if (!canvas.toBlob) {
+          try {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+          return;
+        }
+
+        canvas.toBlob(blob => {
+          if (!blob) {
+            reject(new Error('PNG blob creation failed'));
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = filename;
+          link.href = url;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+          resolve();
+        }, 'image/png');
+      });
+    }
+
     $('saveBtn').addEventListener('click', async () => {
       try {
         setStatus('PNG 저장 중...');
-        const canvas = await html2canvas(exportCard, {
-          backgroundColor: null,
-          scale: 2,
-          useCORS: true,
-          logging: false
-        });
-        const link = document.createElement('a');
-        link.download = `registry-card-${elements.mode.value}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        await exportCardAsPng();
         setStatus('PNG 저장 완료');
       } catch (err) {
         console.error(err);
